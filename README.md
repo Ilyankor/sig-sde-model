@@ -6,7 +6,7 @@
 
 ### Usage
 
-Given an ordered sequence of times `t0 < t1 < ... < tn` and corresponding `d` dimensional data, input the data as a `(n, d+1)` `numpy.NDArray` along with the desired depth of the signature.
+Given an ordered sequence of times `t0 < t1 < ... < tn` and corresponding `d` dimensional data, input the data as a `numpy.NDArray`  with shape `(n, d+1)` along with the desired depth of the signature.
 The result is a `list` of tensors with rank `0, 1, ..., n` which form the truncated signature.
 
 ### Example

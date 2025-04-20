@@ -4,3 +4,4 @@ data/
 clean/
 misc/
 **/__pycache__
+.ipynb_checkpoints

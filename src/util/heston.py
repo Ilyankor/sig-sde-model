@@ -1,42 +1,84 @@
 import numpy as np
 from numpy.typing import NDArray
+from src.util.brownian import correlated_brownian
 
-def corr_brownian(
-        rho: float,
+
+def heston(
+        u: NDArray[np.float64],
+        dt: float,
+        dw: NDArray[np.float64],
+        mu: float,
+        kappa: float,
+        theta: float,
+        sigma: float,
+    ) -> NDArray[np.float64]:
+    """
+    Computes the right hand side of the Heston model.
+    """
+    
+    s = u[0]
+    v = np.maximum(u[1], 0.0) # ensure v >= 0
+
+    return np.array([
+        mu * s * dt + s * np.sqrt(v) * dw[0],
+        kappa * (theta - v) * dt + sigma * np.sqrt(v) * dw[1]
+    ])
+
+
+def heston_euler(
+        s0: float,
+        v0: float,
         t0: float,
         tn: float,
         n: int,
+        mu: float,
+        kappa: float,
+        theta: float,
+        sigma: float,
+        rho: float,
         rng: np.random.Generator = np.random.default_rng()
-    ):
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """
-    Generate 2 correlated 1-D Brownian motions with initial conditions W(t0) = 0.
+    Simulates price and volatility on a uniform grid based on the Heston model
+    using the Euler-Maruyama method.
 
     Args:
-        rho: Coefficient of correlation, -1 <= rho <= 1.
+        s0: Initial price.
+        v0: Initial variance.
         t0: Initial time.
         tn: Final time.
-        n: Number of grid points.
-        rng: NumPy random number generator.
+        n: Number of time steps.
+        mu: Constant drift term.
+        kappa: Mean reversion rate.
+        theta: Long run variance.
+        sigma: Volatility of the variance.
+        rho: Correlation coefficient for Brownian motions, -1 <= rho <= 1.
+        rng: NumPy random Generator.
 
     Returns:
         t: Grid points.
-        x: First Brownian motion.
-        y: Second Brownian motion.
+        u: NumPy array of simulated price and volatility, [price, volatility].
+        w: The underlying Brownian motion used to generate the paths.
     """
-    t, dt = np.linspace(t0, tn, num=n+1, retstep=True)
 
-    dx = rng.normal(scale=np.sqrt(dt), size=n)
-    dy = rho * dx + np.sqrt(1.0 - rho**2) * rng.normal(scale=np.sqrt(dt), size=n)
+    # initialize paths
+    u = np.zeros((n+1, 2))
+    u[0, 0], u[0, 1] = s0, v0
 
-    x = np.insert(np.cumsum(dx), 0, 0.0)
-    y = np.insert(np.cumsum(dy), 0, 0.0)
- 
-    return t, x, y
+    # simulate Brownian motion
+    t, dw, w = correlated_brownian(rho, t0, tn, n, rng)
+    dt = t[1] - t[0]
+
+    # Euler-Maruyama
+    for i in range(n):
+        u[i+1, :] = u[i] + heston(u[i], dt, dw[i], mu, kappa, theta, sigma)
+    
+    return t, u, w
 
 
 def heston_qe(
-        S0: float,
-        V0: float,
+        s0: float,
+        v0: float,
         t0: float,
         tn: float,
         n: int,
@@ -53,11 +95,12 @@ def heston_qe(
     ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
 
     """
-    Computes a sample path of the Heston model using a quadratic exponential discretization scheme.
+    Simulates price and volatility on a uniform grid based on the Heston model
+    using the quadratic exponential discretization scheme.
 
     Args:
-        S0: Initial price.
-        V0: Initial variance.
+        s0: Initial price.
+        v0: Initial variance.
         mu: Constant drift term.
         kappa: Mean reversion rate.
         theta: Long run variance.
@@ -74,18 +117,17 @@ def heston_qe(
     
     Returns:
         t: Grid of times.
-        S: Asset price.
-        V: Asset variance.
+        u: NumPy array of simulated price and volatility, [price, volatility].
     """
 
     # initialize
     t, dt = np.linspace(t0, tn, num=n+1, retstep=True)
 
     S = np.zeros(n+1)
-    S[0] = S0
+    S[0] = s0
 
     V = np.zeros(n+1)
-    V[0] = V0
+    V[0] = v0
 
     # constants
     ekt = np.exp(-kappa * dt)
@@ -138,66 +180,4 @@ def heston_qe(
         logs = np.log(s) + mu * dt + k0 + k1 * V[i] + k2 * v + np.sqrt(k3 * V[i] + k4 * v) * z
         S[i+1] = np.exp(logs)
     
-    return t, S, V
-
-
-def heston(
-        u: NDArray[np.float64],
-        dt: float,
-        dw: NDArray[np.float64],
-        mu: float,
-        kappa: float,
-        theta: float,
-        sigma: float,
-        rho: float
-    ) -> NDArray[np.float64]:
-    """
-    Computes the right hand side of the Heston model.
-    """
-    s = u[0]
-    v = np.maximum(u[1], 0.0)
-
-    return np.array([
-        mu * s * dt + s * np.sqrt(v) * dw[0],
-        kappa * (theta - v) * dt + sigma * np.sqrt(v) * dw[1]
-    ])
-
-
-def est_brownian(time_series):
-    """
-    Via quadratic variation.
-    """
-    qv = np.sum(np.diff(time_series)**2)
-    dw = np.diff(time_series) / np.sqrt(qv)
-    w = np.insert(np.cumsum(dw), 0, 0.0)
-    return w
-
-def heston_euler(
-        s0: float,
-        v0: float,
-        t0: float,
-        tn: float,
-        n: int,
-        mu: float,
-        kappa: float,
-        theta: float,
-        sigma: float,
-        rho: float,
-        rng: np.random.Generator = np.random.default_rng()
-    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-
-    u = np.zeros((n+1, 2))
-    u[0, 0], u[0, 1] = s0, v0
-    t, ws, wv = corr_brownian(rho, t0, tn, n, rng)
-    dt = t[1] - t[0]
-    w = np.column_stack((ws, wv))
-    dw = np.diff(w, axis=0)
-
-    for i in range(n):
-        u[i+1, :] = u[i] + heston(u[i], dt, dw[i], mu, kappa, theta, sigma, rho)
-    return t, u, w
-
-
-if __name__ == "__main__":
-    exit(0)
-
+    return t, np.column_stack((S, V))

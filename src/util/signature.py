@@ -63,7 +63,7 @@ def signature(data: NDArray[np.float64], n: int) -> list:
     Computes the signature of input data.
     
     Args:
-        data: shape(T, d) where T is number of times, d-1 the dimension of data.
+        data: shape(T, d+1) where T is number of times, d the dimension of data.
         n: Depth to compute the signature to.
     
     Returns:
@@ -78,7 +78,3 @@ def signature(data: NDArray[np.float64], n: int) -> list:
         result = multiply(result, exp_map(delta[i+1], n))
 
     return result
-
-
-if __name__ == "__main__":
-    exit(0)
