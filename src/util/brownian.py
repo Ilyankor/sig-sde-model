@@ -58,12 +58,12 @@ def estimate_brownian(data: NDArray[np.float64]) -> NDArray[np.float64]:
     """
 
     # estimate Brownian increments
-    delta = np.diff(data, axis = 0)
+    delta = np.diff(data, axis=0)
     qv = np.sum(delta**2, axis=0)
     dw = delta / np.sqrt(qv)
 
     # construct Brownian motion
     w = np.zeros_like(data)
-    w[1:, :] = np.cumsum(dw, axis=0)
+    w[1:, ...] = np.cumsum(dw, axis=0)
 
     return w

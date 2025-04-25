@@ -2,7 +2,7 @@
 
 ## Computing signatures
 
-`misc/signature.py` contains a basic implementation of computing the signature of sequence data.
+`src/util/signature.py` contains a basic implementation of computing the signature of sequence data.
 
 ### Usage
 
@@ -27,4 +27,4 @@ sig = signature(seq, depth)
 
 ## A model
 
-???
+See `presentation.ipynb` for a walkthrough.

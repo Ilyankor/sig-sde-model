@@ -1,0 +1,25 @@
+DATA SOURCES
+
+DAILY
+https://www.nasdaq.com/market-activity/quotes/historical
+AAPL, AMD, IBM, GOOG, MSFT, NVDA
+INX, IXIC, DJI
+
+https://www.cboe.com/tradable_products/vix/vix_historical_data/
+VIX
+
+https://www.kaggle.com/datasets/shiivvvaam/apple-stock-market-historical-data-1980-2024
+AAPL
+
+INTRADAY 3 MINUTES
+https://www.kaggle.com/datasets/brtnsmth/intraday-market-data/data
+miscellaneous
+
+INTRADAY 1 MINUTE
+https://www.kaggle.com/datasets/gratefuldata/intraday-stock-data-1-min-sp-500-200821
+SPY
+
+WHARTON RESEARCH DATA SERVICES/CRSP
+Stock Market Indexes
+AAPL, AMD, IBM, GOOG, MSFT, NVDA 
+SPY, QQQ, DIA
